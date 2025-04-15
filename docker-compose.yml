@@ -1,0 +1,88 @@
+
+services:
+  # ----- API Gateway -----
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - product-service
+      - customer-service
+      - order-service
+      - elk
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:3001
+      - CUSTOMER_SERVICE_URL=http://customer-service:3002
+      - ORDER_SERVICE_URL=http://order-service:3003
+
+  # ----- Product Service -----
+  product-service:
+    build: ./product-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://product-db:27017/product_db
+    depends_on:
+      - product-db
+
+  product-db:
+    image: mongo
+    container_name: product-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - product_data:/data/db
+
+  # ----- Customer Service -----
+  customer-service:
+    build: ./customer-service
+    ports:
+      - "3002:3002"
+    environment:
+      - MONGO_URI=mongodb://customer-db:27017/customer_db
+    depends_on:
+      - customer-db
+
+  customer-db:
+    image: mongo
+    container_name: customer-db
+    ports:
+      - "27018:27017"
+    volumes:
+      - customer_data:/data/db
+
+  # ----- Order Service -----
+  order-service:
+    build: ./order-service
+    ports:
+      - "3003:3003"
+    environment:
+      - MONGO_URI=mongodb://order-db:27017/order_db
+    depends_on:
+      - order-db
+
+  order-db:
+    image: mongo
+    container_name: order-db
+    ports:
+      - "27019:27017"
+    volumes:
+      - order_data:/data/db
+
+  # ----- ELK Stack -----
+  elk:
+    image: sebp/elk
+    container_name: elk
+    environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "5601:5601"  # Kibana UI
+      - "9200:9200"  # Elasticsearch
+    volumes:
+      - elk_data:/var/lib/elasticsearch
+
+volumes:
+  product_data:
+  customer_data:
+  order_data:
+  elk_data:
